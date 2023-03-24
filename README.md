@@ -2,16 +2,14 @@
 
 
 Checked integer arithmetic using KISS principle.
+
 We basically need 3 operations (add, sub, mult).
-The logic of this code is the same for char, short, int or long long.
-The pratical usage is int, size_t and long long, unsigned long long in my opnion.
-The unit test can run for all chars .. but not for ints. So we assume it works
-using the same principles.
+
+The ideia is perform checks using operations that are garanteed
+to not overflow, divide by zero etc.
+
 
 ```c
-
-
-
 
 #include <stdlib.h>
 #include <assert.h>
@@ -34,7 +32,6 @@ typedef unsigned char UNSIGNED_TYPE;
 typedef signed char SIGNED_TYPE;
 
 bool unsigned_sub(UNSIGNED_TYPE* result, UNSIGNED_TYPE a, UNSIGNED_TYPE b) {
-
     if (a < b)
         return false;
 
