@@ -8,6 +8,7 @@ Checked integer arithmetic using KISS principle.
 
 
 
+
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
@@ -17,14 +18,14 @@ Checked integer arithmetic using KISS principle.
 #include <stdbool.h>
 
 
-#define UNSIGNED_MAX ((unsigned int)UINT_MAX)
-#define UNSIGNED_MIN ((unsigned int)0)
+#define UNSIGNED_MAX ((unsigned short)USHRT_MAX)
+#define UNSIGNED_MIN ((unsigned short)0)
 
-#define SIGNED_MAX ((signed int)INT_MAX)
-#define SIGNED_MIN ((signed int)INT_MIN)
+#define SIGNED_MAX ((signed short)SHRT_MAX)
+#define SIGNED_MIN ((signed short)SHRT_MIN)
 
-typedef unsigned int UNSIGNED_TYPE;
-typedef signed int SIGNED_TYPE;
+typedef unsigned short UNSIGNED_TYPE;
+typedef signed short SIGNED_TYPE;
 
 bool unsigned_sub(UNSIGNED_TYPE* result, UNSIGNED_TYPE a, UNSIGNED_TYPE b) {
 
@@ -60,7 +61,8 @@ bool unsigned_sum(UNSIGNED_TYPE* result, UNSIGNED_TYPE a, UNSIGNED_TYPE b) {
 }
 
 
-bool signed_sub(SIGNED_TYPE* result, SIGNED_TYPE a, SIGNED_TYPE b) {
+bool signed_sub(SIGNED_TYPE* result, SIGNED_TYPE a, SIGNED_TYPE b) 
+{
     if (a >= 0 && b >= 0) {
     }
     else if (a < 0 && b < 0) {
@@ -75,7 +77,6 @@ bool signed_sub(SIGNED_TYPE* result, SIGNED_TYPE a, SIGNED_TYPE b) {
         {
             if (b == SIGNED_MIN)
                 return false;
-                
             if (a > SIGNED_MAX - (-b))
                 return false;
         }
@@ -97,12 +98,8 @@ bool signed_sum(SIGNED_TYPE* result, SIGNED_TYPE a, SIGNED_TYPE b) {
         if (a == SIGNED_MIN || b == SIGNED_MIN)
             return 0;
 
-        /*both negative*/
-
-
         if (a < ((SIGNED_TYPE)SIGNED_MIN) - b)
             return 0;
-
     }
     else {
         /*one positive another negative*/
@@ -116,7 +113,6 @@ bool signed_sum(SIGNED_TYPE* result, SIGNED_TYPE a, SIGNED_TYPE b) {
 
 bool signed_mult(SIGNED_TYPE* result, SIGNED_TYPE a, SIGNED_TYPE b) {
 
-
     if (a > 0 && b > 0) {
         /*both positive*/
         //a*b <= SIGNED_MAX
@@ -127,8 +123,7 @@ bool signed_mult(SIGNED_TYPE* result, SIGNED_TYPE a, SIGNED_TYPE b) {
 
         //a*b <= SIGNED_MAX
 
-        if (a == SIGNED_MIN || b == SIGNED_MIN)
-        {
+        if (a == SIGNED_MIN || b == SIGNED_MIN) {
             return 0;
         }
 
@@ -137,18 +132,15 @@ bool signed_mult(SIGNED_TYPE* result, SIGNED_TYPE a, SIGNED_TYPE b) {
 
     }
     else {
-        if (a == 0 || b == 0)
-        {
+        if (a == 0 || b == 0) {
             *result = 0;
             return 1;
         }
-        if (b > 0)
-        {
+        if (b > 0) {
             if (a < SIGNED_MIN / b)
                 return 0;
         }
-        else
-        {
+        else {
             if (b < SIGNED_MIN / a)
                 return 0;
         }
@@ -166,7 +158,7 @@ void signed_test()
     {
         for (SIGNED_TYPE b = SIGNED_MIN; b != SIGNED_MAX; b++)
         {
-            long long sub_result = ((long long) a) - ((long long)b);
+            long long sub_result = ((long long)a) - ((long long)b);
             bool sub_result_ok = (sub_result >= SIGNED_MIN && sub_result <= SIGNED_MAX);
 
             long long add_result = ((long long)a) + ((long long)b);
@@ -231,8 +223,7 @@ void signed_test()
                 mult_result_ok2 = signed_mult(&mult_result2, a, b);
             }
 
-        }
-        printf("+\n");
+        }     
     }
 }
 
@@ -317,10 +308,10 @@ void unsigned_test()
 
 int main()
 {
-    
+
     signed_test();
     unsigned_test();
-    
+
 }
 
 ```
