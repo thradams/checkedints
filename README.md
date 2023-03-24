@@ -1,10 +1,14 @@
-# checkedints
+# checked ints
+
 
 Checked integer arithmetic using KISS principle.
-
+We basically need 3 operations (add, sub, mult).
+The logic of this code is the same for char, short, int or long long.
+The pratical usage is int, size_t and long long, unsigned long long in my opnion.
+The unit test can run for all chars .. but not for ints. So we assume it works
+using the same principles.
 
 ```c
-
 
 
 
@@ -17,49 +21,55 @@ Checked integer arithmetic using KISS principle.
 #include <string.h>
 #include <stdbool.h>
 
-
-#define UNSIGNED_MAX ((unsigned short)USHRT_MAX)
+/*
+* Code is the same for any signed and unsigned
+*/
+#define UNSIGNED_MAX ((unsigned short)UCHAR_MAX)
 #define UNSIGNED_MIN ((unsigned short)0)
 
-#define SIGNED_MAX ((signed short)SHRT_MAX)
-#define SIGNED_MIN ((signed short)SHRT_MIN)
+#define SIGNED_MAX ((signed short)SCHAR_MAX)
+#define SIGNED_MIN ((signed short)SCHAR_MIN)
 
-typedef unsigned short UNSIGNED_TYPE;
-typedef signed short SIGNED_TYPE;
+typedef unsigned char UNSIGNED_TYPE;
+typedef signed char SIGNED_TYPE;
 
 bool unsigned_sub(UNSIGNED_TYPE* result, UNSIGNED_TYPE a, UNSIGNED_TYPE b) {
 
     if (a < b)
-        return 0;
+        return false;
 
     *result = a - b;
-    return 1;
+    return true;
 }
 
 bool unsigned_mult(UNSIGNED_TYPE* result, UNSIGNED_TYPE a, UNSIGNED_TYPE b) {
 
-    if (b == 0)
-    {
+    if (b == 0) {
+        /*
+          b cannot be zero in the next test
+          so we solve this case here
+        */
         *result = 0;
         return true;
     }
 
     if (a > UNSIGNED_MAX / b)
-        return 0;
+        return false;
 
     *result = a * b;
-    return 1;
+    return true;
 }
 
-bool unsigned_sum(UNSIGNED_TYPE* result, UNSIGNED_TYPE a, UNSIGNED_TYPE b) {
-
-    if (a > UNSIGNED_MAX - b)
-        return 0;
-
+bool unsigned_sum(UNSIGNED_TYPE* result, UNSIGNED_TYPE a, UNSIGNED_TYPE b)
+{
+    if (a > UNSIGNED_MAX - b) {
+        //a=2
+        //b=254
+        return false;
+    }
     *result = a + b;
-    return 1;
+    return true;
 }
-
 
 bool signed_sub(SIGNED_TYPE* result, SIGNED_TYPE a, SIGNED_TYPE b) 
 {
@@ -71,35 +81,55 @@ bool signed_sub(SIGNED_TYPE* result, SIGNED_TYPE a, SIGNED_TYPE b)
         if (a < 0)
         {
             if (a < SIGNED_MIN + b)
+            {
+                // (-128) - (-1)
                 return false;
+            }
         }
         else
         {
             if (b == SIGNED_MIN)
+            {
+                // 0 - (-128)                
                 return false;
-            if (a > SIGNED_MAX - (-b))
+            }
+
+            if (a > SIGNED_MAX - (-b)) {
+                /*
+                *  1 - (-127)
+                *  2 - (-126)                
+                */
                 return false;
+            }
         }
     }
 
     *result = a - b;
-    return 1;
+    return true;
 }
 
 bool signed_sum(SIGNED_TYPE* result, SIGNED_TYPE a, SIGNED_TYPE b) {
 
     if (a >= 0 && b >= 0) {
         /*both positive*/
-        if (a > ((SIGNED_TYPE)SIGNED_MAX) - b)
-            return 0;
+        if (a > SIGNED_MAX - b)
+        {
+            //2+126
+            return false;
+        }
     }
     else if (a < 0 && b < 0) {
 
         if (a == SIGNED_MIN || b == SIGNED_MIN)
-            return 0;
+        {
+            //(-128) + (-128)
+            return false;
+        }
 
-        if (a < ((SIGNED_TYPE)SIGNED_MIN) - b)
-            return 0;
+        if (a < SIGNED_MIN - b) {
+            // (-127) + (-127)
+            return false;
+        }
     }
     else {
         /*one positive another negative*/
@@ -107,47 +137,52 @@ bool signed_sum(SIGNED_TYPE* result, SIGNED_TYPE a, SIGNED_TYPE b) {
     }
 
     *result = a + b;
-    return 1;
+    return true;
 }
 
 
 bool signed_mult(SIGNED_TYPE* result, SIGNED_TYPE a, SIGNED_TYPE b) {
 
     if (a > 0 && b > 0) {
-        /*both positive*/
-        //a*b <= SIGNED_MAX
         if (a > SIGNED_MAX / b)
-            return 0;
+        {
+            //2*64
+            return false;
+        }
     }
     else if (a < 0 && b < 0) {
 
-        //a*b <= SIGNED_MAX
-
         if (a == SIGNED_MIN || b == SIGNED_MIN) {
-            return 0;
+            //(-128)*(-128)
+            return false;
         }
 
         if (-a > SIGNED_MAX / -b)
-            return 0;
-
+        {
+            //-127 * -127
+            return false;
+        }
     }
     else {
         if (a == 0 || b == 0) {
             *result = 0;
-            return 1;
+            return true;
         }
         if (b > 0) {
             if (a < SIGNED_MIN / b)
-                return 0;
+                //(-127) * (2)
+                return false;
         }
         else {
-            if (b < SIGNED_MIN / a)
-                return 0;
+            if (b < SIGNED_MIN / a) {
+                //2*(-128)
+                return false;
+            }
         }
     }
 
     *result = a * b;
-    return 1;
+    return true;
 }
 
 
@@ -236,13 +271,13 @@ void unsigned_test()
         for (UNSIGNED_TYPE b = 0; b != UNSIGNED_MAX; b++)
         {
             long long sub_result = ((long long)a) - ((long long)b);
-            bool sub_result_ok = (sub_result >= SIGNED_MIN && sub_result <= SIGNED_MAX);
+            bool sub_result_ok = (sub_result >= UNSIGNED_MIN && sub_result <= UNSIGNED_MAX);
 
             long long add_result = ((long long)a) + ((long long)b);
-            bool add_result_ok = (add_result >= SIGNED_MIN && add_result <= SIGNED_MAX);
+            bool add_result_ok = (add_result >= UNSIGNED_MIN && add_result <= UNSIGNED_MAX);
 
             long long mult_result = ((long long)a) * ((long long)b);
-            bool mult_result_ok = (mult_result >= SIGNED_MIN && mult_result <= SIGNED_MAX);
+            bool mult_result_ok = (mult_result >= UNSIGNED_MIN && mult_result <= UNSIGNED_MAX);
 
 
             UNSIGNED_TYPE sub_result2;
@@ -316,10 +351,3 @@ int main()
 
 ```
 
-```
-https://www.open-std.org/jtc1/sc22/wg14/www/docs/n2669.pdf
-#include <stdckdint.h>
-bool ckd_add(type1 *result, type2 a, type3 b);
-bool ckd_sub(type1 *result, type2 a, type3 b);
-bool ckd_mul(type1 *result, type2 a, type3 b);
-```
