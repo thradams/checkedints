@@ -744,3 +744,179 @@ int main()
 ```
 
 
+```c
+#include <stdio.h>
+#include <limits.h>
+
+struct R {
+    unsigned long long result;
+    int signal;
+};
+
+struct R add(int sa, int sb, unsigned long long a, unsigned long long b)
+{
+    if (sa > 0 && sb > 0)
+    {
+        if (a > ULLONG_MAX - b)
+            return (struct R) { 0, 0 };
+
+        return (struct R) { a + b, 1 };
+    }
+
+    if (sa < 0)
+    {
+        if (b < a)
+            return (struct R) { 0, 0 };
+
+        return (struct R) { b - a, -1 };
+    }
+
+
+    if (a < b)
+        return (struct R) { 0, 0 };
+
+
+    return (struct R) { a - b, 1 };
+}
+
+
+struct R sub(int sa, int sb, unsigned long long a, unsigned long long b)
+{
+    if (sa > 0 && sb > 0)
+    {
+        if (a > b)
+        {
+            return (struct R) { a-b, 1 };
+        }
+        
+        return (struct R) { b-a, -1 };
+    }
+
+    if (sa < 0)
+    {
+        if (a > ULLONG_MAX - b)
+          return (struct R) { 0, 0 };
+
+        return (struct R) { a+b, -1 };
+    }
+
+    if (a > ULLONG_MAX - b)
+          return (struct R) { 0, 0 };
+
+    //a - -1
+    if (a < b)
+    {
+        return (struct R) { 0, 0 };
+    }
+
+
+    return (struct R) { a - b, 1 };
+}
+
+struct R mul(int sa, int sb, unsigned long long a, unsigned long long b)
+{
+    if (b == 0)
+        return (struct R) { 0, 1 };
+
+    if (a > (ULLONG_MAX / b))
+        return (struct R) { 0, 0 };
+
+    return (struct R) { a*b, sa*sb };
+}
+
+#define CHECK(T, PREFIX)\
+_Bool PREFIX ## _check(T* r, struct R a)\
+{\
+    if (a.signal == 0)\
+        return 1;\
+    if (a.result > -(PREFIX ## _MIN))\
+        return 1;\
+   if (a.result > PREFIX ## _MAX)\
+        return 1;\
+    *r = (T)a.result;\
+    return 0;\
+}
+
+#define UCHECK(T, PREFIX)\
+_Bool PREFIX ## _check(T* r, struct R a)\
+{\
+    if (a.signal == 0)\
+        return 1;\
+    if (a.result > 0)\
+        return 1;\
+   if (a.result < PREFIX ## _MAX)\
+        return 0;\
+    *r = (T)a.result;\
+    return 0;\
+}
+
+CHECK(signed char, CHAR)
+UCHECK(unsigned char, UCHAR)
+
+CHECK(signed short, SHRT)
+UCHECK(unsigned short, USHRT)
+
+CHECK(signed int, INT)
+UCHECK(unsigned int, UINT)
+
+CHECK(signed long, LONG)
+UCHECK(unsigned long, ULONG)
+
+CHECK(signed long long, LLONG)
+UCHECK(unsigned long long, ULLONG)
+
+#define ckc_add(r, a, b)\
+_Generic(*(&r),\
+        signed char: CHAR_check(&r, add(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned char: UCHAR_check(&r, add(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        signed short: SHORT_check(&r, add(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned short: USHORT_check(&r, add(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        signed int : INT_check(&r, add(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned int : UINT_check(&r, add(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        signed long : LONG_check(&r, add(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned long : ULONG_check(&r, add(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        signed long long : LLONG_check(&r, add(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned long long : ULLONG_check(&r, add(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b)))\
+        )
+
+#define ckc_sub(r, a, b)\
+_Generic(*(&r),\
+        signed char: CHAR_check(&r, sub(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned char: UCHAR_check(&r, sub(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        signed short: SHORT_check(&r, sub(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned short: USHORT_check(&r, sub(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        signed int : INT_check(&r, sub(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned int : UINT_check(&r, sub(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        signed long : LONG_check(&r, sub(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned long : ULONG_check(&r, sub(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        signed long long : LLONG_check(&r, sub(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned long long : ULLONG_check(&r, sub(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b)))\
+        )
+
+#define ckc_mul(r, a, b)\
+_Generic(*(&r),\
+        signed char: CHAR_check(&r, mul(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned char: UCHAR_check(&r, mul(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        signed short: SHORT_check(&r, mul(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned short: USHORT_check(&r, mul(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        signed int : INT_check(&r, mul(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned int : UINT_check(&r, mul(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        signed long : LONG_check(&r, mul(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned long : ULONG_check(&r, mul(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        signed long long : LLONG_check(&r, mul(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b))),\
+        unsigned long long : ULLONG_check(&r, mul(a > 0, b > 0, (a > 0 ? a : -a), (b > 0 ? b : -b)))\
+        )
+
+int main()
+{
+    int a = 1;
+    int b = 2;
+    int r;
+
+    if (ckc_add(r, a, b) != 0)
+    {
+        printf("failed");
+    }
+}
+
+```
